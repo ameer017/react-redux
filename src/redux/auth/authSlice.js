@@ -202,6 +202,7 @@ const authSlice = createSlice({
         state.message = action.payload;
         toast.error(action.payload);
       })
+
       // Get User
       .addCase(getUser.pending, (state) => {
         state.isLoading = true;
@@ -217,6 +218,7 @@ const authSlice = createSlice({
         state.message = action.payload;
         toast.error(action.payload);
       })
+      
       // Login
       .addCase(loginUser.pending, (state) => {
         state.isLoading = true;
