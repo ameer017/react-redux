@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import useAuthStore from "../store/auth";
+import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import { getUser, logoutUser } from "../redux/auth/authSlice";
 
 const Dashboard = () => {
-  const { user, logout } = useAuthStore();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
+  const { user, isLoading, isError, message } = useSelector(
+    (state) => state.auth
+  );
 
+  // console.log(user)
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "Good morning";
@@ -16,7 +20,7 @@ const Dashboard = () => {
   };
 
   const randomQuotes = [
-    "Stay hungry. Stay foolish. &minus; Steve Jobs",
+    "Stay hungry. Stay foolish. - Steve Jobs",
     "Consistency beats motivation.",
     "The best time to start was yesterday. The next best time is now.",
     "Small steps every day.",
@@ -25,29 +29,17 @@ const Dashboard = () => {
   const [quote, setQuote] = useState("");
 
   useEffect(() => {
-    const savedUser = JSON.parse(localStorage.getItem("registeredUser"));
-  
-    if (!user && savedUser) {
-      // Force rehydrate the zustand store
-      useAuthStore.setState({ user: savedUser });
-    } else if (!user && !savedUser) {
-      // No user anywhere, kick them out
-      navigate("/login-user");
-    } else {
-      // Everything good, show dashboard stuff
-      setTimeout(() => setLoading(false), 800);
-      setQuote(randomQuotes[Math.floor(Math.random() * randomQuotes.length)]);
-    }
-  }, [user, navigate]);
-  
+    dispatch(getUser());
+    setQuote(randomQuotes[Math.floor(Math.random() * randomQuotes.length)]);
+  }, [dispatch]);
 
-  const handleLogout = () => {
-    logout();
-    toast.success("Logged out successfully!");
+  const handleLogout = async() => {
+    await dispatch(logoutUser());
+    // toast.success("Logged out successfully!");
     navigate("/login-user");
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-500"></div>
@@ -67,7 +59,7 @@ const Dashboard = () => {
           <button className="text-gray-600 hover:text-gray-800">
             <i className="fas fa-cog"></i>
           </button>
-          {/* Logout button */}
+
           <button
             onClick={handleLogout}
             className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
@@ -87,10 +79,6 @@ const Dashboard = () => {
           {/* <p className="text-gray-500 text-sm">Joined: Jan 2024</p> */}
         </div>
       </div>
-
-     
-
-      
 
       <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded">
         <p className="italic">"{quote}"</p>

@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import bcrypt from "bcryptjs";
+import { useDispatch, useSelector } from "react-redux";
+import { registerUser, resetAuthState } from "../redux/auth/authSlice";
 
 const Register = () => {
   const initialState = {
@@ -11,12 +13,16 @@ const Register = () => {
     password2: "",
   };
 
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState(initialState);
   const { fullname, email, password, password2 } = formData;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pwdError, setPwdError] = useState("");
+
+  const { isLoading, isSuccess, message } = useSelector((state) => state.auth);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -24,24 +30,19 @@ const Register = () => {
   };
 
   const validateInput = () => {
-    if (
-      !formData.fullname ||
-      !formData.email ||
-      !formData.password ||
-      !formData.password2
-    ) {
+    if (!fullname || !email || !password || !password2) {
       toast.error("Don't try to cheat. Fill everything.");
       return false;
     }
 
-    if (formData.password.length < 6) {
-      toast.error("Password must be at least 6 characters long");
+    if (password.length < 6) {
+      // toast.error("Password must be at least 6 characters long");
       setPwdError("Password must be at least 6 characters long");
       return false;
     }
 
-    if (formData.password !== formData.password2) {
-      toast.error("Passwords don't match");
+    if (password !== password2) {
+      // toast.error("Passwords don't match");
       setPwdError("Passwords don't match");
       return false;
     }
@@ -52,40 +53,33 @@ const Register = () => {
   const handleSubmitData = async (e) => {
     e.preventDefault();
     const isValid = validateInput();
-    if (!isValid) {
-      return;
-    }
+    if (!isValid) return;
 
     setIsSubmitting(true);
 
     try {
-      const existingUsers =
-        JSON.parse(localStorage.getItem("registeredUsers")) || [];
-
-      const emailExists = existingUsers.some((user) => user.email === email);
-
-      if (emailExists) {
-        toast.error("A user with this email already exists. Try logging in.");
-        setIsSubmitting(false);
-        return;
-      }
-
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
 
       const newUser = { fullname, email, password: hashedPassword };
 
-      const updatedUsers = [...existingUsers, newUser];
-
-      localStorage.setItem("registeredUsers", JSON.stringify(updatedUsers));
+      // Dispatch the registerUser action to store user data in Redux
+      await dispatch(registerUser(newUser));
 
       setIsSubmitting(false);
-      navigate("/profile");
     } catch (error) {
       console.log(error);
       setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    if (isSuccess) {
+      navigate("/profile");
+    }
+
+    dispatch(resetAuthState());
+  }, [isSuccess, dispatch, navigate]);
 
   return (
     <>

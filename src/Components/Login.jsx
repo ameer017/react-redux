@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import useAuthStore from "../store/auth";
+import { useDispatch, useSelector } from "react-redux";
+import { loginUser, resetAuthState } from "../redux/auth/authSlice";
 import { toast } from "react-toastify";
-import bcrypt from "bcryptjs"; 
 
 const Login = () => {
   const initialState = {
@@ -12,10 +12,10 @@ const Login = () => {
 
   const [loginData, updateLoginData] = useState(initialState);
   const { email, password } = loginData;
-  const [emailError, setEmailError] = useState("");
-  const [passwordError, setPasswordError] = useState("");
-  const login = useAuthStore((state) => state.login);
+
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { isLoading, isSuccess, isError } = useSelector((state) => state.auth);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -30,39 +30,24 @@ const Login = () => {
       return;
     }
 
-    const savedUsers =
-      JSON.parse(localStorage.getItem("registeredUsers")) || [];
-
-    if (!savedUsers.length) {
-      toast.error("No users found. Please register first.");
-      return;
-    }
-
-    const foundUser = savedUsers.find((user) => user.email === email);
-
-    if (!foundUser) {
-      setEmailError("Email not found.");
-      toast.error("Wrong email.");
-      return;
-    } else {
-      setEmailError("");
-    }
-
-    // 🔥 Compare passwords properly using bcrypt
-    const passwordMatch = await bcrypt.compare(password, foundUser.password);
-
-    if (!passwordMatch) {
-      setPasswordError("Incorrect password.");
-      toast.error("Wrong password.");
-      return;
-    } else {
-      setPasswordError("");
-    }
-
-    login(foundUser);
-    toast.success("Welcome back!");
-    navigate("/profile");
+    const userData = {
+      email,
+      password,
+    };
+    await dispatch(loginUser(userData));
   };
+
+  useEffect(() => {
+    if (isSuccess) {
+      navigate("/profile");
+    }
+
+    if (isError) {
+      return;
+    }
+
+    dispatch(resetAuthState());
+  }, [isSuccess, dispatch, navigate, isError]);
 
   return (
     <div className="flex justify-center items-center h-screen bg-gray-100">
@@ -76,31 +61,25 @@ const Login = () => {
           type="email"
           name="email"
           placeholder="Email"
-          className={`w-full p-2 border rounded mb-4 ${
-            emailError ? "border-red-500" : ""
-          }`}
+          className="w-full p-2 border rounded mb-6"
           value={email}
           onChange={handleInputChange}
         />
-        {emailError && <p className="text-red-500">{emailError}</p>}
 
         <input
           type="password"
           name="password"
           placeholder="Password"
-          className={`w-full p-2 border rounded mb-6 ${
-            passwordError ? "border-red-500" : ""
-          }`}
+          className="w-full p-2 border rounded mb-6"
           value={password}
           onChange={handleInputChange}
         />
-        {passwordError && <p className="text-red-500">{passwordError}</p>}
 
         <button
           type="submit"
           className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
         >
-          Login
+          {isLoading ? "Logging in..." : "Login"}
         </button>
 
         <p className="mt-4">
