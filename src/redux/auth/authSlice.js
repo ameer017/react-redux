@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { toast } from "react-toastify";
-import bcrypt from "bcryptjs";
 
 // ======== GET USER FROM LOCAL STORAGE =========
 const getInitialUser = () => {
@@ -34,14 +33,11 @@ export const registerUser = createAsyncThunk(
         return thunkAPI.rejectWithValue("User with this email already exists.");
       }
 
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(userData.password.trim(), salt);
-
       const newUser = {
         id: Date.now().toString(),
         fullname: userData.fullname.trim(),
         email: userData.email.toLowerCase().trim(),
-        password: hashedPassword,
+        password: userData.password.trim(),
         createdAt: new Date().toISOString(),
         isAuthenticated: true,
       };
@@ -52,19 +48,14 @@ export const registerUser = createAsyncThunk(
       localStorage.setItem("registeredUser", JSON.stringify(newUser));
 
       const userToReturn = {
-        id: newUser.id,
+        id: newUser.id, 
         fullname: newUser.fullname,
         email: newUser.email,
         createdAt: newUser.createdAt,
         isAuthenticated: true,
       };
 
-      const verify = await bcrypt.compare(
-        userData.password.trim(),
-        hashedPassword
-      );
-      console.log("Registration verification:", verify);
-
+      console.log(userToReturn);
       return userToReturn;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.message || "Registration failed");
@@ -130,19 +121,6 @@ export const loginUser = createAsyncThunk(
       console.log(user);
       if (!user) {
         return thunkAPI.rejectWithValue("User not found. Please register.");
-      }
-
-      console.log("User entered password: ", credentials.password);
-      console.log("Stored hashed password: ", user.password);
-
-      const isPasswordCorrect = await bcrypt.compare(
-        credentials.password.trim(),
-        user.password
-      );
-      console.log("Password comparison result: ", isPasswordCorrect);
-
-      if (!isPasswordCorrect) {
-        return thunkAPI.rejectWithValue("Invalid credentials. Try again.");
       }
 
       const authenticatedUser = {
