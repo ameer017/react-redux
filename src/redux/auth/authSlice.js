@@ -48,7 +48,7 @@ export const registerUser = createAsyncThunk(
       localStorage.setItem("registeredUser", JSON.stringify(newUser));
 
       const userToReturn = {
-        id: newUser.id, 
+        id: newUser.id,
         fullname: newUser.fullname,
         email: newUser.email,
         createdAt: newUser.createdAt,
@@ -218,7 +218,7 @@ const authSlice = createSlice({
         state.message = action.payload;
         toast.error(action.payload);
       })
-      
+
       // Login
       .addCase(loginUser.pending, (state) => {
         state.isLoading = true;
@@ -255,3 +255,9 @@ export default authSlice.reducer;
 // Not actually an API endpoint. | ✅
 // Helps Redux know what action you are handling. | ✅
 // Future-proof if you later connect to a backend. | ✅
+
+// For more details, visit https://react-redux.js.org/tutorials/quick-start
+
+// UI binding just means connecting your code (usually data or logic) to the user interface — so when the data changes, the UI updates automatically without you manually doing it.
+// It’s a fancy way of saying “making the UI and the data talk to each other.”
+// UI binding = your UI staying in sync with your data, without you manually micromanaging everything.
